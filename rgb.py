@@ -1,6 +1,15 @@
 #!/usr/bin/env python3
 """
-This example requires a barcode reader and the Python library evdev.
+This is a caproto IOC that exposes one PV named 'rpi:color' by default. It
+expects a HEX color code like 'ffffff'. It updates the duty cycle of a PWM
+signal to three color channels accordingly. The IOC requires parameters to
+configure which GPIO pin corresponds to each color channel, for example:
+
+./rgb.py --red 15 --green 22 --blue 11
+
+For general options, like debug logging, see help:
+
+./rgb.py -h
 """
 import ast
 # Work around problem where os.urandom(32) hangs asyncio import.
