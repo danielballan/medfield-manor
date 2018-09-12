@@ -7,8 +7,14 @@ from caproto.server import pvproperty, PVGroup, template_arg_parser, run
 import RPi.GPIO as GPIO
 
 
-def rescale(x, in_min, in_max, out_min, out_max):
-    return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min
+def rescale(x):
+    # Put on a 0-100 (duty cycle) scale, and apply gamma.
+    # The gamma value (2.8) comes from the vendor of the RGB LED, which
+    # cites it with the caveat, "The default of 2.8 isn't super-scientific,
+    # just tested a few numbers and this seemed to produce a sufficiently
+    # uniform brightness ramp along an LED strip."
+    # https://learn.adafruit.com/led-tricks-gamma-correction/the-longer-fix
+    return 100 * (x / 255)**2.8
 
 
 def duty_cycle(color):
@@ -17,7 +23,7 @@ def duty_cycle(color):
               'green': (color & 0x00ff00) >> 8,
               'blue': (color & 0x0000ff) >> 0}
 
-    return {channel: rescale(val, 0, 255, 0, 100)
+    return {channel: rescale(val)
             for channel, val in rgb255.items()}
 
 
