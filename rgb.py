@@ -3,6 +3,10 @@
 This example requires a barcode reader and the Python library evdev.
 """
 import ast
+# Work around problem where os.urandom(32) hangs asyncio import.
+import os
+os.urandom(32)
+import asyncio
 from caproto.server import pvproperty, PVGroup, template_arg_parser, run
 import RPi.GPIO as GPIO
 
