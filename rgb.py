@@ -11,7 +11,6 @@ For general options, like debug logging, see help:
 
 ./rgb.py -h
 """
-import ast
 # Work around problem where os.urandom(32) hangs asyncio import.
 import os
 os.urandom(32)
@@ -47,7 +46,7 @@ class IOC(PVGroup):
         self.pwm = {}
 
     async def write_color(self, instance, value):
-        color_base10 = ast.literal_eval(f'0x{value[0]}')
+        color_base10 = int(value[0], 16)
         for channel, val in duty_cycle(color_base10).items():
             self.pwm[channel].ChangeDutyCycle(val)
         return value
