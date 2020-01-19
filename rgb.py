@@ -19,24 +19,14 @@ from caproto.server import pvproperty, PVGroup, template_arg_parser, run
 import RPi.GPIO as GPIO
 
 
-def rescale(x):
+def rescale(x, gamma, max_=100):
     # Put on a 0-100 (duty cycle) scale, and apply gamma.
     # The gamma value (2.8) comes from the vendor of the RGB LED, which
     # cites it with the caveat, "The default of 2.8 isn't super-scientific,
     # just tested a few numbers and this seemed to produce a sufficiently
     # uniform brightness ramp along an LED strip."
     # https://learn.adafruit.com/led-tricks-gamma-correction/the-longer-fix
-    return 100 * (x / 255)**2.8
-
-
-def duty_cycle(color):
-    """Given a HEX color, Compute PWM duty cycle percentage each channel."""
-    rgb255 = {'red': (color & 0xff0000) >> 16,
-              'green': (color & 0x00ff00) >> 8,
-              'blue': (color & 0x0000ff) >> 0}
-
-    return {channel: rescale(val)
-            for channel, val in rgb255.items()}
+    return max_ * (x / 255)**gamma
 
 
 class IOC(PVGroup):
@@ -46,12 +36,33 @@ class IOC(PVGroup):
         self.pwm = {}
 
     async def write_color(self, instance, value):
-        color_base10 = int(value[0], 16)
-        for channel, val in duty_cycle(color_base10).items():
+        color_base10 = int(value, 16)
+        for channel, val in self.duty_cycle(color_base10).items():
             self.pwm[channel].ChangeDutyCycle(val)
         return value
 
-    color = pvproperty(value=['000000'], put=write_color)
+    color = pvproperty(value='000000', put=write_color)
+    gamma = pvproperty(value=2.8)
+    red_max = pvproperty(value=100.)
+    green_max = pvproperty(value=95.)  # tuned to get a good yellow
+    blue_max = pvproperty(value=80.)
+
+    def duty_cycle(self, color):
+        """Given a HEX color, Compute PWM duty cycle percentage each channel."""
+        rgb255 = {'red': (color & 0xff0000) >> 16,
+                  'green': (color & 0x00ff00) >> 8,
+                  'blue': (color & 0x0000ff) >> 0}
+        print('rgb255', rgb255)
+        channel_calib = {'red': self.red_max.value,
+                         'green': self.green_max.value,
+                         'blue': self.blue_max.value}
+        res = {}
+        for channel in ('red', 'green', 'blue'):
+            res[channel] = rescale(rgb255[channel],
+                                   self.gamma.value,
+                                   channel_calib[channel])
+        print('duty_cycle', res)
+        return res
 
     @color.startup
     async def color(self, instance, async_lib):
