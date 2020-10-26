@@ -17,26 +17,30 @@ X   X   X   X   X   X   X   X   X   X   X   X   X   X   X   X   X
 
 In [8]: list(itertools.islice(flicker.flicker(5), 16))
 """
-import itertools, math, random
+import math, random
 
 def gardener_pattern(N):
     indexes = list(reversed(range(N)))
-    for i in itertools.count():
+    i = 0
+    while True:
         update = []
         for j in indexes:
             if i % 2**j == 0:
                 update.append(j)
         yield update
+        i += 1
                 
                 
 def mccartney_pattern(N):
     indexes = list(reversed(range(N)))
-    for i in itertools.count():
+    i = 0
+    while True:
         update = []
         for j in indexes:
             if i % 2**(1 + j) == 2**j-1:
                 update.append(j)
         yield update
+        i += 1
                 
                 
 def vis(pattern, N):
@@ -57,6 +61,4 @@ def flicker(N):
     for update in mccartney_pattern(N):
         for index in update:
             terms[index] = random.random()
-        yield sum(terms)
-            
-list(itertools.islice(flicker(5), 16))
+        yield sum(terms) / N
