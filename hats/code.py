@@ -17,19 +17,34 @@ advertisement = ProvideServicesAdvertisement(uart_service)
 
 pixels = neopixel.NeoPixel(board.D6, 4 * 8, brightness=0.1)
 
+import math
+import flicker
+
+flicker_gen = flicker.flicker(5)
+
+color = (0, 0, 0)
+
+
+def f(color, pixels):
+    flicker_brightness = next(flicker_gen)
+    color_ = tuple(
+        [math.ceil(flicker_brightness * ch)
+            for ch in color])
+    pixels.fill(color_)
+
+
 while True:
     print('waiting')
     # Advertise when not connected.
     ble.start_advertising(advertisement)
     while not ble.connected:
-        pass
+        f(color, pixels)
     ble.stop_advertising()
     print('connected', ble)
     while ble.connected:
+        f(color, pixels)
         if uart_service.in_waiting:
             packet = Packet.from_stream(uart_service)
             print('packet', packet)
             if isinstance(packet, ColorPacket):
-                print(packet.color)
-                pixels.fill(packet.color)
-
+                color = packet.color
